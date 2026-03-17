@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/buyback",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
