@@ -49,6 +49,8 @@ export interface LaunchFormData {
 }
 
 export interface AgentWallet {
+  id: string;
+  name: string;
   address: string;
   encryptedKey: {
     salt: number[];

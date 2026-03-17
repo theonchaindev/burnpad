@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Lock, Search, TrendingUp, MessageCircle, Pencil } from "lucide-react";
+import { Lock, Search, TrendingUp, MessageCircle } from "lucide-react";
 import { MOCK_TOKENS, seedColour } from "@/lib/constants";
 import TokenCard from "@/components/TokenCard";
 import type { FeedFilter } from "@/lib/types";
@@ -42,18 +42,39 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <div className="max-w-5xl mx-auto px-4 pt-6 pb-16">
+      <div className="max-w-5xl mx-auto px-4 pt-14 pb-16">
+
+        {/* Hero */}
+        <div className="mb-12">
+          <p className="text-xs font-medium mb-4 tracking-wide" style={{ color: "var(--green)" }}>
+            Autonomous buyback &amp; burn
+          </p>
+          <h1 className="text-4xl font-bold tracking-tight leading-tight mb-4" style={{ color: "var(--text)" }}>
+            Launch your coin<br />with our agent
+          </h1>
+          <p className="text-sm leading-relaxed mb-6 max-w-md" style={{ color: "var(--text2)" }}>
+            Deploy a Pump.fun token with a permanent, on-chain buyback agent. Creator fees go straight to burns — locked forever.
+          </p>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/launch"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              style={{ background: "var(--green)", color: "#000" }}
+            >
+              Create a coin
+            </Link>
+            <Link
+              href="/docs"
+              className="px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+              style={{ border: "1px solid var(--line)", color: "var(--text2)" }}
+            >
+              How it works
+            </Link>
+          </div>
+        </div>
 
         {/* Toolbar */}
         <div className="flex items-center gap-3 mb-6">
-          <Link
-            href="/launch"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium shrink-0 transition-colors"
-            style={{ background: "var(--green)", color: "#000" }}
-          >
-            <Pencil size={13} />
-            New coin
-          </Link>
           <div className="relative flex-1 max-w-xs">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text3)" }} />
             <input

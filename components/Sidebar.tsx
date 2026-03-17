@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LayoutGrid, Rocket, BookOpen, Twitter, Wallet } from "lucide-react";
-import { getStoredWallet } from "@/lib/wallet";
-import WalletModal from "./wallet/WalletModal";
+import { LayoutGrid, Rocket, BookOpen, Twitter } from "lucide-react";
 
 const NAV = [
   { href: "/",       icon: LayoutGrid, label: "Feed"   },
@@ -13,21 +10,8 @@ const NAV = [
   { href: "/docs",   icon: BookOpen,   label: "Docs"   },
 ];
 
-function shortAddr(a: string) {
-  return `${a.slice(0, 4)}…${a.slice(-4)}`;
-}
-
 export default function Sidebar() {
   const pathname = usePathname();
-  const [walletOpen, setWalletOpen] = useState(false);
-  const [walletAddr, setWalletAddr] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const w = getStoredWallet();
-      if (w) setWalletAddr(w.address);
-    }
-  }, [walletOpen]);
 
   return (
     <>
@@ -66,7 +50,7 @@ export default function Sidebar() {
         </nav>
 
         {/* Bottom */}
-        <div className="px-3 pb-4 pt-3 space-y-1" style={{ borderTop: "1px solid var(--line)" }}>
+        <div className="px-3 pb-4 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
           <a
             href="https://twitter.com/burnpad"
             target="_blank"
@@ -77,29 +61,8 @@ export default function Sidebar() {
             <Twitter size={14} />
             Community
           </a>
-
-          <button
-            onClick={() => setWalletOpen(true)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs transition-colors text-left"
-            style={{
-              color: walletAddr ? "var(--green)" : "var(--text2)",
-              background: walletAddr ? "rgba(0,232,124,0.06)" : "var(--bg3)",
-              border: `1px solid ${walletAddr ? "rgba(0,232,124,0.12)" : "var(--line)"}`,
-            }}
-          >
-            <Wallet size={13} />
-            <span className="flex-1 truncate font-mono">
-              {walletAddr ? shortAddr(walletAddr) : "Create wallet"}
-            </span>
-          </button>
         </div>
       </aside>
-
-      <WalletModal
-        open={walletOpen}
-        onClose={() => setWalletOpen(false)}
-        onCreated={(addr) => { setWalletAddr(addr); setWalletOpen(false); }}
-      />
     </>
   );
 }
