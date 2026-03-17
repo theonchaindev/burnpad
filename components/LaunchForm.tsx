@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Twitter, Globe, Lock, ChevronDown, ChevronUp, Droplets } from "lucide-react";
+import {
+  Upload, Twitter, Globe, Lock, ChevronDown, ChevronUp, Droplets, Copy, Check,
+} from "lucide-react";
 import TimeframeSelector from "./TimeframeSelector";
 import LockModal from "./LockModal";
-import { hasWallet } from "@/lib/wallet";
 import type { BuybackTimeframe, LaunchFormData } from "@/lib/types";
 
 const PLATFORM_FEE_SOL = 0.02;
@@ -48,7 +49,6 @@ function Divider({ label }: { label: string }) {
 
 export default function LaunchForm() {
   const router = useRouter();
-  const walletExists = typeof window !== "undefined" && hasWallet();
 
   const [form, setForm] = useState<LaunchFormData>({
     name: "", ticker: "", description: "",
@@ -56,12 +56,29 @@ export default function LaunchForm() {
     buybackRate: 100, buybackTimeframe: "5m",
     createLP: false, lpSolAmount: 1, lpFeeShare: 0,
   });
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [showLinks, setShowLinks] = useState(false);
+  const [imagePreview, setImagePreview]   = useState<string | null>(null);
+  const [showLinks, setShowLinks]         = useState(false);
   const [lockModalOpen, setLockModalOpen] = useState(false);
-  const [launching, setLaunching] = useState(false);
-  const [error, setError] = useState("");
+  const [launching, setLaunching]         = useState(false);
+  const [error, setError]                 = useState("");
+  const [agentAddress, setAgentAddress]   = useState<string | null>(null);
+  const [copied, setCopied]               = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Generate a server-side agent wallet on mount
+  useEffect(() => {
+    fetch("/api/agent/create", { method: "POST" })
+      .then((r) => r.json())
+      .then((d) => { if (d.address) setAgentAddress(d.address); })
+      .catch(() => {/* silently ignore — server may not be configured yet */});
+  }, []);
+
+  function copyAddress() {
+    if (!agentAddress) return;
+    navigator.clipboard.writeText(agentAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   function handleImage(file: File) {
     if (!file.type.startsWith("image/")) return;
@@ -76,20 +93,21 @@ export default function LaunchForm() {
     setError("");
     try {
       const fd = new FormData();
-      fd.append("name", form.name);
-      fd.append("ticker", form.ticker);
-      fd.append("description", form.description);
-      fd.append("buybackRate", String(form.buybackRate));
+      fd.append("name",            form.name);
+      fd.append("ticker",          form.ticker);
+      fd.append("description",     form.description);
+      fd.append("buybackRate",     String(form.buybackRate));
       fd.append("buybackTimeframe", form.buybackTimeframe);
-      fd.append("twitter", form.twitter);
-      fd.append("telegram", form.telegram);
-      fd.append("website", form.website);
-      fd.append("createLP", String(form.createLP));
-      fd.append("lpSolAmount", String(form.lpSolAmount));
-      fd.append("lpFeeShare", String(form.lpFeeShare));
+      fd.append("twitter",         form.twitter);
+      fd.append("telegram",        form.telegram);
+      fd.append("website",         form.website);
+      fd.append("createLP",        String(form.createLP));
+      fd.append("lpSolAmount",     String(form.lpSolAmount));
+      fd.append("lpFeeShare",      String(form.lpFeeShare));
+      if (agentAddress) fd.append("agentAddress", agentAddress);
       if (form.imageFile) fd.append("image", form.imageFile);
 
-      const res = await fetch("/api/launch", { method: "POST", body: fd });
+      const res  = await fetch("/api/launch", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Deploy failed");
       router.push(`/token/${data.mint}`);
@@ -101,16 +119,41 @@ export default function LaunchForm() {
     }
   }
 
-  const valid = form.name.trim() && form.ticker.trim() && form.description.trim();
+  const valid    = form.name.trim() && form.ticker.trim() && form.description.trim();
   const totalCost = PLATFORM_FEE_SOL + (form.createLP ? form.lpSolAmount : 0);
-
-  // Fee breakdown
-  const burnPct = form.createLP ? form.buybackRate - form.lpFeeShare : form.buybackRate;
-  const lpPct = form.createLP ? form.lpFeeShare : 0;
+  const burnPct  = form.createLP ? form.buybackRate - form.lpFeeShare : form.buybackRate;
+  const lpPct    = form.createLP ? form.lpFeeShare : 0;
   const creatorPct = 100 - form.buybackRate;
 
   return (
     <div className="w-full max-w-lg mx-auto space-y-5">
+
+      {/* Agent wallet funding notice */}
+      {agentAddress && (
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "var(--bg2)", border: "1px solid var(--line)" }}>
+          <div>
+            <p className="text-xs font-medium mb-0.5" style={{ color: "var(--text)" }}>
+              Fund your agent wallet
+            </p>
+            <p className="text-[11px]" style={{ color: "var(--text3)" }}>
+              Send at least <span style={{ color: "var(--text2)" }}>{totalCost.toFixed(2)} SOL</span> to this address before launching.
+              The agent will use it for the creation fee and future buybacks.
+            </p>
+          </div>
+          <button
+            onClick={copyAddress}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-left"
+            style={{ background: "var(--bg3)", border: "1px solid var(--line)" }}
+          >
+            <span className="text-[12px] font-mono truncate" style={{ color: "var(--text2)" }}>
+              {agentAddress}
+            </span>
+            <span className="shrink-0 ml-2" style={{ color: copied ? "var(--green)" : "var(--text3)" }}>
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Image + name */}
       <div className="flex gap-4">
@@ -218,7 +261,7 @@ export default function LaunchForm() {
       {/* Execution interval */}
       <div>
         <Label>Execution interval</Label>
-        <TimeframeSelector value={form.buybackTimeframe}
+        <TimeframeSelector value={form.buybackTimeframe as BuybackTimeframe}
           onChange={(v) => setForm(f => ({ ...f, buybackTimeframe: v }))} />
       </div>
 
@@ -245,8 +288,6 @@ export default function LaunchForm() {
 
         {form.createLP && (
           <div className="px-4 pb-5 space-y-5" style={{ borderTop: "1px solid var(--line)", paddingTop: 20 }}>
-
-            {/* SOL amount */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium" style={{ color: "var(--text2)" }}>SOL to deposit</span>
@@ -260,7 +301,6 @@ export default function LaunchForm() {
               </div>
             </div>
 
-            {/* Fee split */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-medium" style={{ color: "var(--text2)" }}>Fee split</span>
@@ -268,8 +308,6 @@ export default function LaunchForm() {
                   of your {form.buybackRate}% fee allocation
                 </span>
               </div>
-
-              {/* Visual split bar */}
               <div className="flex items-center gap-0 h-7 rounded-lg overflow-hidden mb-2.5"
                 style={{ border: "1px solid var(--line)" }}>
                 <div className="flex items-center justify-center h-full text-[11px] font-medium transition-all"
@@ -294,7 +332,6 @@ export default function LaunchForm() {
                   </div>
                 )}
               </div>
-
               <input type="range" min={0} max={Math.floor(form.buybackRate / 2)} value={form.lpFeeShare}
                 onChange={(e) => setForm(f => ({ ...f, lpFeeShare: Number(e.target.value) }))}
                 className="w-full" />
@@ -304,12 +341,11 @@ export default function LaunchForm() {
               </div>
             </div>
 
-            {/* Fee breakdown */}
             <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--line)" }}>
               {[
                 { label: "Buyback & burn", value: `${burnPct}%`, color: "var(--green)" },
-                { label: "LP restocking", value: `${lpPct}%`, color: "#60a5fa" },
-                { label: "Creator", value: `${creatorPct}%`, color: "var(--text2)" },
+                { label: "LP restocking",  value: `${lpPct}%`,  color: "#60a5fa" },
+                { label: "Creator",        value: `${creatorPct}%`, color: "var(--text2)" },
               ].map((row, i, arr) => (
                 <div key={row.label} className="flex items-center justify-between px-3 py-2"
                   style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--line)" : "none", background: "var(--bg3)" }}>
@@ -322,11 +358,10 @@ export default function LaunchForm() {
         )}
       </div>
 
-      {/* Lock notice */}
       <p className="text-[11px] px-1" style={{ color: "var(--text3)" }}>
         Buyback rate and interval are{" "}
         <span style={{ color: "var(--text2)" }}>permanently locked on-chain</span> at deployment.
-        These settings cannot be changed by anyone after launch.
+        These settings cannot be changed after launch.
       </p>
 
       {error && (
@@ -349,24 +384,24 @@ export default function LaunchForm() {
             </div>
           )}
           <div className="flex items-center justify-between px-3 py-2" style={{ background: "var(--bg3)" }}>
-            <span className="text-xs font-medium" style={{ color: "var(--text)" }}>Total</span>
+            <span className="text-xs font-medium" style={{ color: "var(--text)" }}>Total required</span>
             <span className="text-xs font-mono font-semibold" style={{ color: "var(--green)" }}>{totalCost.toFixed(2)} SOL</span>
           </div>
         </div>
 
         <button
-          onClick={walletExists ? () => setLockModalOpen(true) : undefined}
-          disabled={!walletExists || !valid}
+          onClick={valid ? () => setLockModalOpen(true) : undefined}
+          disabled={!valid}
           className="w-full py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
           style={{
-            background: walletExists && valid ? "var(--green)" : "var(--bg3)",
-            color: walletExists && valid ? "#000" : "var(--text3)",
-            border: `1px solid ${walletExists && valid ? "var(--green)" : "var(--line)"}`,
-            cursor: walletExists && valid ? "pointer" : "not-allowed",
+            background: valid ? "var(--green)" : "var(--bg3)",
+            color: valid ? "#000" : "var(--text3)",
+            border: `1px solid ${valid ? "var(--green)" : "var(--line)"}`,
+            cursor: valid ? "pointer" : "not-allowed",
           }}
         >
           <Lock size={14} />
-          {walletExists ? "Create coin" : "Create a wallet first"}
+          Create coin
         </button>
       </div>
 
@@ -376,7 +411,7 @@ export default function LaunchForm() {
         onConfirm={handleLaunch}
         tokenName={form.name || "token"}
         buybackRate={form.buybackRate}
-        buybackTimeframe={form.buybackTimeframe}
+        buybackTimeframe={form.buybackTimeframe as BuybackTimeframe}
         loading={launching}
       />
     </div>
