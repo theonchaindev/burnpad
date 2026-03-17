@@ -1,21 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --bg:         #07070d;
-  --bg2:        #0c0c14;
-  --bg3:        #11111a;
-  --bg4:        #161622;
-  --line:       #1e1e2c;
-  --line2:      #28283a;
-  --text:       #f0f0f2;
-  --text2:      #8888a0;
-  --text3:      #505068;
-  --green:      #00ff94;
-  --green-dim:  #00cc77;
-  --green-bg:   rgba(0, 255, 148, 0.06);
-  --green-bdr:  rgba(0, 255, 148, 0.16);
-  --red:        #ff4466;
-  --red-bg:     rgba(255, 68, 102, 0.06);
+  --bg:    #090909;
+  --bg2:   #111111;
+  --bg3:   #1a1a1a;
+  --line:  #222222;
+  --text:  #ededed;
+  --text2: #888888;
+  --text3: #444444;
+  --green: #00e87c;
+  --red:   #f03e5a;
 }
 
 @theme inline {
@@ -37,12 +31,12 @@ body {
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
 
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 3px;
+  height: 2px;
   background: var(--line);
   border-radius: 2px;
   outline: none;
@@ -50,9 +44,9 @@ input[type="range"] {
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px; height: 14px;
+  width: 16px; height: 16px;
   border-radius: 50%;
   background: var(--green);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 0 3px var(--green-bg);
+  border: 3px solid var(--bg);
+  cursor: pointer;
 }

@@ -20,6 +20,7 @@ export interface Token {
   buybackLockedAt: Date | null;
   hasLP: boolean;
   lpSolAmount: number;
+  lpFeeShare: number;
   marketCap: number;
   price: number;
   priceChange24h: number;
@@ -44,6 +45,7 @@ export interface LaunchFormData {
   buybackTimeframe: BuybackTimeframe;
   createLP: boolean;
   lpSolAmount: number;
+  lpFeeShare: number;
 }
 
 export interface AgentWallet {
