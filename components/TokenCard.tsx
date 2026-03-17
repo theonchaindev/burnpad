@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Lock, Flame, TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { Lock } from "lucide-react";
 import type { Token } from "@/lib/types";
 import { TIMEFRAME_OPTIONS } from "@/lib/constants";
 
@@ -12,10 +12,17 @@ function fmt(n: number) {
 }
 
 function TokenAvatar({ name }: { name: string }) {
-  const colors = ["from-orange-500 to-red-600", "from-purple-500 to-blue-600", "from-green-500 to-teal-600", "from-pink-500 to-rose-600"];
-  const idx = name.charCodeAt(0) % colors.length;
+  const hues = [160, 200, 280, 320];
+  const hue = hues[name.charCodeAt(0) % hues.length];
   return (
-    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors[idx]} flex items-center justify-center shrink-0 font-bold text-white text-sm`}>
+    <div
+      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs font-mono"
+      style={{
+        background: `hsl(${hue}, 60%, 8%)`,
+        border: `1px solid hsl(${hue}, 60%, 15%)`,
+        color: `hsl(${hue}, 80%, 60%)`,
+      }}
+    >
       {name[0]}
     </div>
   );
@@ -25,69 +32,76 @@ export default function TokenCard({ token }: { token: Token }) {
   const up = token.priceChange24h >= 0;
   const timeframeLabel = TIMEFRAME_OPTIONS.find((o) => o.value === token.buybackTimeframe)?.label ?? "";
   const timeAgo = Math.floor((Date.now() - new Date(token.createdAt).getTime()) / 60000);
-  const timeStr = timeAgo < 60 ? `${timeAgo}m ago` : `${Math.floor(timeAgo / 60)}h ago`;
+  const timeStr = timeAgo < 60 ? `${timeAgo}m` : `${Math.floor(timeAgo / 60)}h`;
 
   return (
     <Link href={`/token/${token.mint}`}>
-      <div className="group p-4 rounded-xl bg-[#0f0f0f] border border-[#1a1a1a] hover:border-orange-500/30 hover:fire-glow transition-all cursor-pointer">
-        {/* Top row */}
-        <div className="flex items-start gap-3 mb-3">
+      <div
+        className="group p-4 rounded-xl transition-all cursor-pointer"
+        style={{ background: "#080808", border: "1px solid #181818" }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(0,255,110,0.2)";
+          (e.currentTarget as HTMLDivElement).style.background = "#0a0a0a";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "#181818";
+          (e.currentTarget as HTMLDivElement).style.background = "#080808";
+        }}
+      >
+        {/* Top */}
+        <div className="flex items-start gap-2.5 mb-3">
           <TokenAvatar name={token.name} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-sm text-[#f5f5f5] truncate">{token.name}</span>
-              <span className="text-xs text-[#555] font-mono">{token.ticker}</span>
+              <span className="text-sm font-semibold text-[#e8e8e8] truncate">{token.name}</span>
+              <span className="text-[11px] font-mono" style={{ color: "#555" }}>{token.ticker}</span>
               {token.buybackLocked && (
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/20">
-                  <Lock size={9} className="text-orange-400" />
-                  <span className="text-[10px] font-bold text-orange-400">LOCKED</span>
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm"
+                  style={{ background: "rgba(0,255,110,0.06)", border: "1px solid rgba(0,255,110,0.15)" }}>
+                  <Lock size={8} style={{ color: "#00ff6e" }} />
+                  <span className="text-[9px] font-mono tracking-wide" style={{ color: "#00ff6e" }}>LOCKED</span>
                 </div>
               )}
             </div>
-            <p className="text-xs text-[#555] mt-0.5 truncate">{token.description}</p>
+            <p className="text-[11px] mt-0.5 truncate" style={{ color: "#444" }}>{token.description}</p>
           </div>
-          <span className="text-xs text-[#555] shrink-0">{timeStr}</span>
+          <span className="text-[10px] font-mono shrink-0" style={{ color: "#333" }}>{timeStr}</span>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="p-2 rounded-lg bg-[#111] border border-[#1a1a1a]">
-            <p className="text-xs text-[#555] mb-0.5">Market Cap</p>
-            <p className="text-sm font-bold text-[#f5f5f5]">{fmt(token.marketCap)}</p>
-          </div>
-          <div className="p-2 rounded-lg bg-[#111] border border-[#1a1a1a]">
-            <p className="text-xs text-[#555] mb-0.5">24h Change</p>
-            <div className="flex items-center gap-1">
-              {up ? <TrendingUp size={11} className="text-green-400" /> : <TrendingDown size={11} className="text-red-400" />}
-              <p className={`text-sm font-bold ${up ? "text-green-400" : "text-red-400"}`}>
-                {up ? "+" : ""}{token.priceChange24h.toFixed(1)}%
-              </p>
+          {[
+            { label: "mcap", val: fmt(token.marketCap) },
+            { label: "24h", val: `${up ? "+" : ""}${token.priceChange24h.toFixed(1)}%`, color: up ? "#00ff6e" : "#ff4455" },
+            { label: "revenue", val: fmt(token.revenue), color: "#00cc57" },
+          ].map((s) => (
+            <div key={s.label} className="px-2 py-1.5 rounded-md" style={{ background: "#0a0a0a", border: "1px solid #181818" }}>
+              <p className="text-[9px] font-mono mb-0.5" style={{ color: "#444" }}>{s.label}</p>
+              <p className="text-[12px] font-mono font-semibold" style={{ color: s.color || "#e8e8e8" }}>{s.val}</p>
             </div>
-          </div>
-          <div className="p-2 rounded-lg bg-[#111] border border-[#1a1a1a]">
-            <p className="text-xs text-[#555] mb-0.5">Revenue</p>
-            <p className="text-sm font-bold text-orange-400">{fmt(token.revenue)}</p>
-          </div>
+          ))}
         </div>
 
-        {/* Buyback info */}
-        <div className="flex items-center justify-between pt-2 border-t border-[#1a1a1a]">
-          <div className="flex items-center gap-2">
-            <Flame size={12} className="text-orange-500" />
-            <span className="text-xs text-[#888]">{token.buybackRate}% buyback rate</span>
-          </div>
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-2.5 border-t border-[#181818]">
           <div className="flex items-center gap-1.5">
-            <Clock size={11} className="text-[#555]" />
-            <span className="text-xs text-[#555]">{timeframeLabel}</span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#00ff6e", boxShadow: "0 0 4px #00ff6e" }} />
+            <span className="text-[11px] font-mono" style={{ color: "#555" }}>
+              {token.buybackRate}% buyback
+            </span>
           </div>
+          <span className="text-[10px] font-mono" style={{ color: "#333" }}>{timeframeLabel.toLowerCase()}</span>
         </div>
 
         {/* Bonding curve */}
-        <div className="mt-2">
-          <div className="h-1 rounded-full bg-[#1a1a1a] overflow-hidden">
+        <div className="mt-2.5">
+          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: "#151515" }}>
             <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-600/50 to-orange-400/50 group-hover:from-orange-600 group-hover:to-orange-400 transition-colors duration-300"
-              style={{ width: `${token.bondingCurveProgress}%` }}
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${token.bondingCurveProgress}%`,
+                background: "linear-gradient(90deg, rgba(0,255,110,0.4), rgba(0,255,110,0.7))",
+              }}
             />
           </div>
         </div>

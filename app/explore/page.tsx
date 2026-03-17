@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Flame, Filter, SortDesc } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import TokenCard from "@/components/TokenCard";
 import type { Token, BuybackTimeframe } from "@/lib/types";
 import { MOCK_TOKENS } from "@/lib/constants";
 
 type SortKey = "newest" | "marketCap" | "revenue" | "buybackRate";
+
+const selStyle = {
+  background: "#0a0a0a",
+  border: "1px solid #1e1e1e",
+  color: "#888",
+  outline: "none",
+  appearance: "none" as const,
+};
 
 export default function ExplorePage() {
   const [tokens, setTokens] = useState<Token[]>(MOCK_TOKENS as Token[]);
@@ -40,78 +48,72 @@ export default function ExplorePage() {
     });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
+    <div className="max-w-6xl mx-auto px-5 py-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-black mb-1">Explore Tokens</h1>
-          <p className="text-sm text-[#888]">{tokens.length} tokens with locked buyback &amp; burn</p>
+          <p className="text-[10px] font-mono tracking-widest mb-1.5" style={{ color: "#00cc57" }}>ACTIVE_AGENTS</p>
+          <h1 className="text-2xl font-black text-[#e8e8e8]">Browse agents</h1>
+          <p className="text-sm mt-1 font-mono" style={{ color: "#444" }}>
+            {tokens.length} deployed · all parameters locked
+          </p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20">
-          <Flame size={13} className="text-orange-400" />
-          <span className="text-xs text-orange-400 font-medium">All settings locked</span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded"
+          style={{ background: "rgba(0,255,110,0.06)", border: "1px solid rgba(0,255,110,0.12)" }}>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#00ff6e" }} />
+          <span className="text-[10px] font-mono" style={{ color: "#00cc57" }}>LIVE</span>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        {/* Search */}
+      <div className="flex flex-col sm:flex-row gap-2.5 mb-6">
         <div className="relative flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#333" }} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tokens..."
-            className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-[#111] border border-[#222] text-sm text-[#f5f5f5] placeholder:text-[#333] focus:border-orange-500/40 focus:outline-none transition-colors"
+            placeholder="search tokens..."
+            className="w-full pl-8 pr-3 py-2 rounded-lg text-xs font-mono transition-all"
+            style={{ ...selStyle, color: "#e8e8e8" }}
+            onFocus={(e) => (e.target.style.borderColor = "rgba(0,255,110,0.2)")}
+            onBlur={(e) => (e.target.style.borderColor = "#1e1e1e")}
           />
         </div>
 
-        {/* Sort */}
         <div className="flex items-center gap-2">
-          <SortDesc size={13} className="text-[#555] shrink-0" />
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="px-3 py-2.5 rounded-lg bg-[#111] border border-[#222] text-sm text-[#f5f5f5] focus:outline-none focus:border-orange-500/40 transition-colors appearance-none"
-          >
-            <option value="newest">Newest first</option>
-            <option value="marketCap">Market cap</option>
-            <option value="revenue">Revenue</option>
-            <option value="buybackRate">Buyback rate</option>
+          <SlidersHorizontal size={12} style={{ color: "#333" }} />
+          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}
+            className="px-3 py-2 rounded-lg text-xs font-mono" style={selStyle}>
+            <option value="newest">sort: newest</option>
+            <option value="marketCap">sort: market_cap</option>
+            <option value="revenue">sort: revenue</option>
+            <option value="buybackRate">sort: buyback_rate</option>
           </select>
         </div>
 
-        {/* Timeframe filter */}
-        <div className="flex items-center gap-2">
-          <Filter size={13} className="text-[#555] shrink-0" />
-          <select
-            value={filterTimeframe}
-            onChange={(e) => setFilterTimeframe(e.target.value as BuybackTimeframe | "all")}
-            className="px-3 py-2.5 rounded-lg bg-[#111] border border-[#222] text-sm text-[#f5f5f5] focus:outline-none focus:border-orange-500/40 transition-colors appearance-none"
-          >
-            <option value="all">All frequencies</option>
-            <option value="instant">Instant</option>
-            <option value="hourly">Hourly</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-          </select>
-        </div>
+        <select value={filterTimeframe} onChange={(e) => setFilterTimeframe(e.target.value as BuybackTimeframe | "all")}
+          className="px-3 py-2 rounded-lg text-xs font-mono" style={selStyle}>
+          <option value="all">interval: all</option>
+          <option value="instant">interval: instant</option>
+          <option value="hourly">interval: hourly</option>
+          <option value="daily">interval: daily</option>
+          <option value="weekly">interval: weekly</option>
+        </select>
       </div>
 
-      {/* Token grid */}
+      {/* Grid */}
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-52 rounded-xl bg-[#0f0f0f] border border-[#1a1a1a] animate-pulse" />
+            <div key={i} className="h-48 rounded-xl animate-pulse" style={{ background: "#080808", border: "1px solid #181818" }} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
-          <Flame size={32} className="text-[#222] mx-auto mb-3" />
-          <p className="text-[#555]">No tokens found</p>
+          <p className="text-[11px] font-mono" style={{ color: "#333" }}>// no agents found</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((token) => (
             <TokenCard key={token.id} token={token} />
           ))}
