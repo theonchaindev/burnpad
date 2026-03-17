@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Token {
+  id                String   @id @default(cuid())
+  mint              String   @unique
+  name              String
+  ticker            String
+  description       String
+  imageUrl          String?
+  creatorWallet     String
+  createdAt         DateTime @default(now())
+
+  // Buyback config — locked forever after creation
+  buybackRate          Int
+  buybackTimeframe     String
+  buybackLocked        Boolean  @default(true)
+  buybackLockedAt      DateTime @default(now())
+
+  // Stats
+  marketCap            Float    @default(0)
+  price                Float    @default(0)
+  priceChange24h       Float    @default(0)
+  volume24h            Float    @default(0)
+  revenue              Float    @default(0)
+  buybacksCompleted    Float    @default(0)
+  buybacksPending      Float    @default(0)
+  totalBurned          Float    @default(0)
+  bondingCurveProgress Float    @default(0)
+
+  buybackEvents BuybackEvent[]
+
+  @@index([createdAt])
+}
+
+model BuybackEvent {
+  id          String   @id @default(cuid())
+  tokenMint   String
+  amount      Float
+  txSignature String   @unique
+  executedAt  DateTime @default(now())
+
+  token Token @relation(fields: [tokenMint], references: [mint])
+
+  @@index([tokenMint, executedAt])
+}
