@@ -8,22 +8,22 @@ datasource db {
 }
 
 model Token {
-  id                String   @id @default(cuid())
-  mint              String   @unique
-  name              String
-  ticker            String
-  description       String
-  imageUrl          String?
-  creatorWallet     String
-  createdAt         DateTime @default(now())
-
-  // Buyback config — locked forever after creation
+  id                   String   @id @default(cuid())
+  mint                 String   @unique
+  name                 String
+  ticker               String
+  description          String
+  imageUrl             String?
+  creatorWallet        String
+  creatorName          String   @default("anonymous")
+  createdAt            DateTime @default(now())
+  twitter              String?
+  telegram             String?
+  website              String?
   buybackRate          Int
   buybackTimeframe     String
   buybackLocked        Boolean  @default(true)
   buybackLockedAt      DateTime @default(now())
-
-  // Stats
   marketCap            Float    @default(0)
   price                Float    @default(0)
   priceChange24h       Float    @default(0)
@@ -32,6 +32,7 @@ model Token {
   buybacksCompleted    Float    @default(0)
   buybacksPending      Float    @default(0)
   totalBurned          Float    @default(0)
+  replies              Int      @default(0)
   bondingCurveProgress Float    @default(0)
 
   buybackEvents BuybackEvent[]

@@ -1,221 +1,173 @@
+"use client";
+
 import Link from "next/link";
-import { Lock, ArrowRight, Shield, Zap, Clock } from "lucide-react";
-import { MOCK_TOKENS } from "@/lib/constants";
+import { useState } from "react";
+import { Lock, Search, TrendingUp, MessageCircle, ExternalLink, Pencil } from "lucide-react";
+import { MOCK_TOKENS, seedColour } from "@/lib/constants";
 import TokenCard from "@/components/TokenCard";
+import type { FeedFilter } from "@/lib/types";
 
-const STATS = [
-  { label: "agents_deployed", value: "247" },
-  { label: "total_burned", value: "$1.2M" },
-  { label: "buybacks_executed", value: "8,431" },
-  { label: "avg_rate", value: "78%" },
+const KING = MOCK_TOKENS[2]; // DailyBurn — highest mcap
+
+function fmt(n: number) {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+  return `$${n.toFixed(2)}`;
+}
+
+const FILTER_TABS: { key: FeedFilter; label: string }[] = [
+  { key: "trending", label: "🔥 trending" },
+  { key: "new", label: "🆕 new" },
+  { key: "graduating", label: "📈 about to graduate" },
+  { key: "graduated", label: "🎓 graduated" },
 ];
 
-const FEATURES = [
-  {
-    icon: Lock,
-    title: "Immutable protocol",
-    desc: "Buyback parameters written on-chain at deploy. No admin keys. No override. Zero trust required.",
-  },
-  {
-    icon: Zap,
-    title: "Autonomous execution",
-    desc: "Agent monitors your token around the clock. Executes buybacks automatically on your interval.",
-  },
-  {
-    icon: Clock,
-    title: "Configurable intervals",
-    desc: "Choose instant, hourly, daily, or weekly execution. Set it at launch — locked forever.",
-  },
-  {
-    icon: Shield,
-    title: "Verifiable on-chain",
-    desc: "All parameters stored in an immutable smart contract. Anyone can verify the commitment.",
-  },
-];
+function KingAvatar() {
+  const col = seedColour(KING.name);
+  return (
+    <div className="w-full h-full flex items-center justify-center text-4xl font-black"
+      style={{ background: col.bg, color: col.text }}>
+      {KING.name[0]}
+    </div>
+  );
+}
 
 export default function HomePage() {
+  const [filter, setFilter] = useState<FeedFilter>("trending");
+  const [search, setSearch] = useState("");
+
+  const filtered = MOCK_TOKENS.filter((t) => {
+    if (search) {
+      const q = search.toLowerCase();
+      return t.name.toLowerCase().includes(q) || t.ticker.toLowerCase().includes(q);
+    }
+    if (filter === "graduating") return t.bondingCurveProgress >= 60 && t.bondingCurveProgress < 100;
+    if (filter === "graduated") return t.bondingCurveProgress >= 100;
+    if (filter === "new") return Date.now() - new Date(t.createdAt).getTime() < 3 * 60 * 60 * 1000;
+    return true;
+  });
+
   return (
     <div className="min-h-screen" style={{ background: "#050505" }}>
+      <div className="max-w-6xl mx-auto px-4 pt-6 pb-16">
 
-      {/* Hero */}
-      <section className="relative flex flex-col items-center text-center pt-20 pb-16 px-5 overflow-hidden">
-        {/* Dot grid bg */}
-        <div className="absolute inset-0 dot-grid opacity-100 pointer-events-none" />
-        {/* Green orb */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[280px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, rgba(0,255,110,0.04) 0%, transparent 70%)" }} />
-
-        <div className="relative z-10 max-w-2xl mx-auto">
-          {/* Status badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-7 text-[11px] font-mono"
-            style={{ background: "rgba(0,255,110,0.06)", border: "1px solid rgba(0,255,110,0.15)", color: "#00cc57" }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#00ff6e", boxShadow: "0 0 6px #00ff6e" }} />
-            system_status: ONLINE · {STATS[0].value} agents active
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4 leading-tight text-[#e8e8e8]">
-            Autonomous buyback &amp; burn{" "}
-            <span style={{ color: "#00ff6e" }}>protocol</span>
-          </h1>
-
-          <p className="text-[#555] text-base mb-8 leading-relaxed max-w-lg mx-auto">
-            Deploy tokens on Pump.fun with a permanent, on-chain buyback agent.
-            Set your rate, choose your interval — locked forever at deployment.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/launch"
-              className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all"
-              style={{
-                background: "#00ff6e",
-                color: "#050505",
-                boxShadow: "0 0 24px rgba(0,255,110,0.2)",
-              }}
-            >
-              <Lock size={14} />
-              deploy agent
-              <ArrowRight size={13} />
-            </Link>
-            <Link
-              href="/explore"
-              className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all hover:border-[#2a2a2a] hover:text-[#999]"
-              style={{ color: "#555", border: "1px solid #1e1e1e" }}
-            >
-              browse agents
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section style={{ borderTop: "1px solid #181818", borderBottom: "1px solid #181818", background: "#080808" }}>
-        <div className="max-w-4xl mx-auto px-5 py-5 grid grid-cols-2 sm:grid-cols-4 gap-0 divide-x divide-[#151515]">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center px-6 py-2">
-              <p className="text-xl font-black font-mono" style={{ color: "#00ff6e" }}>{s.value}</p>
-              <p className="text-[10px] font-mono mt-0.5" style={{ color: "#333" }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="max-w-5xl mx-auto px-5 py-16">
-        <div className="mb-10">
-          <p className="text-[10px] font-mono tracking-widest mb-2" style={{ color: "#00cc57" }}>HOW_IT_WORKS</p>
-          <h2 className="text-2xl font-black text-[#e8e8e8]">Three steps to deploy</h2>
-        </div>
-        <div className="grid sm:grid-cols-3 gap-4">
-          {[
-            { n: "01", title: "configure_token", desc: "Set name, ticker, description, and upload an image for your token." },
-            { n: "02", title: "set_agent_params", desc: "Define your buyback rate (1–100%) and execution interval. These become immutable." },
-            { n: "03", title: "lock_and_deploy", desc: "Confirm the lock. Parameters are written on-chain and can never be modified." },
-          ].map((step) => (
-            <div key={step.n} className="relative p-5 rounded-xl overflow-hidden"
-              style={{ background: "#080808", border: "1px solid #181818" }}>
-              <span className="absolute top-4 right-5 text-4xl font-black font-mono" style={{ color: "#111" }}>{step.n}</span>
-              <p className="text-[11px] font-mono mb-2 relative z-10" style={{ color: "#00cc57" }}>{step.n}</p>
-              <h3 className="text-sm font-bold text-[#e8e8e8] mb-1.5 font-mono relative z-10">{step.title}</h3>
-              <p className="text-[12px] leading-relaxed relative z-10" style={{ color: "#555" }}>{step.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section style={{ borderTop: "1px solid #181818", background: "#080808" }}>
-        <div className="max-w-5xl mx-auto px-5 py-16">
-          <div className="mb-10">
-            <p className="text-[10px] font-mono tracking-widest mb-2" style={{ color: "#00cc57" }}>PROTOCOL_FEATURES</p>
-            <h2 className="text-2xl font-black text-[#e8e8e8]">Built for trust</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="flex gap-4 p-5 rounded-xl"
-                style={{ background: "#080808", border: "1px solid #181818" }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "rgba(0,255,110,0.06)", border: "1px solid rgba(0,255,110,0.12)" }}>
-                  <f.icon size={14} style={{ color: "#00ff6e" }} />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold font-mono text-[#e8e8e8] mb-1">{f.title}</h3>
-                  <p className="text-[12px] leading-relaxed" style={{ color: "#555" }}>{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Recent agents */}
-      <section className="max-w-5xl mx-auto px-5 py-16">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-[10px] font-mono tracking-widest mb-1" style={{ color: "#00cc57" }}>RECENT_AGENTS</p>
-            <h2 className="text-lg font-black text-[#e8e8e8]">Latest deployments</h2>
-          </div>
-          <Link href="/explore" className="flex items-center gap-1.5 text-xs font-mono transition-colors"
-            style={{ color: "#555" }}>
-            view all <ArrowRight size={11} />
-          </Link>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {MOCK_TOKENS.map((token) => (
-            <TokenCard key={token.id} token={token} />
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section style={{ borderTop: "1px solid #181818", background: "#080808" }}>
-        <div className="max-w-xl mx-auto px-5 py-16 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-5"
-            style={{ background: "rgba(0,255,110,0.07)", border: "1px solid rgba(0,255,110,0.2)", boxShadow: "0 0 24px rgba(0,255,110,0.08)" }}>
-            <svg width="20" height="20" viewBox="0 0 12 12" fill="none">
-              <circle cx="6" cy="6" r="2" fill="#00ff6e" />
-              <circle cx="6" cy="6" r="4.5" stroke="#00ff6e" strokeWidth="0.75" opacity="0.4" />
-              <line x1="6" y1="0" x2="6" y2="1.5" stroke="#00ff6e" strokeWidth="1.2" />
-              <line x1="12" y1="6" x2="10.5" y2="6" stroke="#00ff6e" strokeWidth="1.2" />
-              <line x1="6" y1="12" x2="6" y2="10.5" stroke="#00ff6e" strokeWidth="1.2" />
-              <line x1="0" y1="6" x2="1.5" y2="6" stroke="#00ff6e" strokeWidth="1.2" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-black text-[#e8e8e8] mb-3">Ready to deploy?</h2>
-          <p className="mb-7 text-sm leading-relaxed" style={{ color: "#555" }}>
-            Launch a token with a permanent, verifiable buyback agent. No trust assumptions required.
-          </p>
+        {/* Top bar */}
+        <div className="flex items-center gap-3 mb-5">
           <Link
             href="/launch"
-            className="inline-flex items-center gap-2 px-7 py-3 rounded-lg text-sm font-semibold transition-all"
-            style={{ background: "#00ff6e", color: "#050505", boxShadow: "0 0 24px rgba(0,255,110,0.18)" }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shrink-0 transition-all"
+            style={{ background: "#00ff6e", color: "#050505", boxShadow: "0 0 16px rgba(0,255,110,0.2)" }}
           >
-            <Lock size={14} />
-            deploy_agent()
+            <Pencil size={13} />
+            start a new coin
           </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer style={{ borderTop: "1px solid #111" }}>
-        <div className="max-w-5xl mx-auto px-5 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded flex items-center justify-center"
-              style={{ background: "rgba(0,255,110,0.06)", border: "1px solid rgba(0,255,110,0.15)" }}>
-              <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
-                <circle cx="6" cy="6" r="2" fill="#00ff6e" />
-                <circle cx="6" cy="6" r="4.5" stroke="#00ff6e" strokeWidth="0.75" opacity="0.4" />
-              </svg>
-            </div>
-            <span className="text-xs font-semibold text-[#e8e8e8] font-mono">
-              burn<span style={{ color: "#00ff6e" }}>pad</span>
-            </span>
+          <div className="relative flex-1 max-w-sm">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#333" }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="search for token"
+              className="w-full pl-9 pr-3 py-2 rounded-lg text-sm bg-[#0d0d0d] border border-[#222] placeholder:text-[#333] text-[#e8e8e8] focus:border-[rgba(0,255,110,0.2)] focus:outline-none transition-colors"
+            />
           </div>
-          <p className="text-[11px] font-mono" style={{ color: "#2a2a2a" }}>
-            built on pump.fun · solana · not financial advice · DYOR
-          </p>
         </div>
-      </footer>
+
+        {/* King of the Hill */}
+        {!search && (
+          <div className="mb-5 rounded-xl overflow-hidden" style={{ background: "#080808", border: "1px solid #1a1a1a" }}>
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#141414]"
+              style={{ background: "rgba(0,255,110,0.03)" }}>
+              <span className="text-sm">👑</span>
+              <span className="text-xs font-bold" style={{ color: "#00ff6e" }}>king of the hill</span>
+              <span className="text-[11px] ml-1" style={{ color: "#333" }}>— highest market cap</span>
+            </div>
+            <div className="flex gap-4 p-4">
+              <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0">
+                <KingAvatar />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-3 mb-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-[#e8e8e8]">{KING.name}</span>
+                    <span className="text-xs font-mono" style={{ color: "#555" }}>${KING.ticker}</span>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+                      style={{ background: "rgba(0,255,110,0.07)", border: "1px solid rgba(0,255,110,0.15)" }}>
+                      <Lock size={8} style={{ color: "#00ff6e" }} />
+                      <span className="text-[9px] font-mono font-bold" style={{ color: "#00ff6e" }}>
+                        {KING.buybackRate}% BURN AGENT
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-bold font-mono text-[#e8e8e8]">{fmt(KING.marketCap)}</p>
+                    <div className="flex items-center gap-1 justify-end mt-0.5">
+                      <TrendingUp size={10} style={{ color: "#00ff6e" }} />
+                      <span className="text-[11px] font-mono" style={{ color: "#00ff6e" }}>
+                        +{KING.priceChange24h.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[12px] mb-1.5" style={{ color: "#555" }}>
+                  created by <span style={{ color: "#00cc57" }}>{KING.creatorName}</span>
+                </p>
+                <p className="text-[12px] leading-relaxed line-clamp-2 mb-3" style={{ color: "#555" }}>
+                  {KING.description}
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: "#161616" }}>
+                      <div className="h-full rounded-full" style={{ width: `${KING.bondingCurveProgress}%`, background: "#00ff6e" }} />
+                    </div>
+                    <span className="text-[10px] font-mono" style={{ color: "#00cc57" }}>{KING.bondingCurveProgress}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle size={11} style={{ color: "#444" }} />
+                    <span className="text-[11px] font-mono" style={{ color: "#444" }}>{KING.replies}</span>
+                  </div>
+                  <Link href={`/token/${KING.mint}`} className="flex items-center gap-1 text-[11px] transition-colors"
+                    style={{ color: "#444" }}>
+                    view <ExternalLink size={9} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filter tabs */}
+        {!search && (
+          <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1">
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilter(tab.key)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
+                style={{
+                  background: filter === tab.key ? "rgba(0,255,110,0.07)" : "transparent",
+                  border: `1px solid ${filter === tab.key ? "rgba(0,255,110,0.18)" : "#1a1a1a"}`,
+                  color: filter === tab.key ? "#00ff6e" : "#555",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Feed */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-xs font-mono" style={{ color: "#333" }}>// no tokens found</p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {filtered.map((token) => (
+              <TokenCard key={token.id} token={token} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

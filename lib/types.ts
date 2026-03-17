@@ -1,4 +1,5 @@
 export type BuybackTimeframe = "instant" | "hourly" | "daily" | "weekly";
+export type FeedFilter = "trending" | "new" | "graduating" | "graduated";
 
 export interface Token {
   id: string;
@@ -8,31 +9,30 @@ export interface Token {
   description: string;
   imageUrl: string | null;
   creatorWallet: string;
+  creatorName: string;
   createdAt: Date;
-  // Buyback config (locked forever)
-  buybackRate: number; // 1-100
+  // Social links
+  twitter: string | null;
+  telegram: string | null;
+  website: string | null;
+  // Buyback config
+  buybackRate: number;
   buybackTimeframe: BuybackTimeframe;
   buybackLocked: boolean;
   buybackLockedAt: Date | null;
-  // Stats (updated by agent)
+  // Market data
   marketCap: number;
   price: number;
   priceChange24h: number;
   volume24h: number;
+  // Buyback stats
   revenue: number;
   buybacksCompleted: number;
   buybacksPending: number;
   totalBurned: number;
-  // Bonding curve
-  bondingCurveProgress: number; // 0-100
-}
-
-export interface BuybackEvent {
-  id: string;
-  tokenMint: string;
-  amount: number;
-  txSignature: string;
-  executedAt: Date;
+  // Community
+  replies: number;
+  bondingCurveProgress: number;
 }
 
 export interface LaunchFormData {
@@ -40,6 +40,9 @@ export interface LaunchFormData {
   ticker: string;
   description: string;
   imageFile: File | null;
+  twitter: string;
+  telegram: string;
+  website: string;
   buybackRate: number;
   buybackTimeframe: BuybackTimeframe;
 }
